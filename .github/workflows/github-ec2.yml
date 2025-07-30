@@ -1,19 +1,19 @@
-name: Deploy Next.js to EC2
+name: 🚀 Deploy to EC2
 
 on:
   push:
     branches:
-      - main
+      - frontend
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: 📥 Checkout code
+        uses: actions/checkout@v2
 
-      - name: Sync project to EC2
+      - name: 📡 Copy files to EC2
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
@@ -21,20 +21,16 @@ jobs:
           REMOTE_USER: ${{ secrets.USERNAME }}
           SOURCE: "./"
           TARGET: ${{ secrets.TARGET_DIR }}
-          EXCLUDE: ".git/,node_modules/"
+          EXCLUDE: "/node_modules/,/.git/"
 
-      - name: Run deployment script on EC2
-        uses: appleboy/ssh-action@master
+      - name: 🔧 Run remote build & restart
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ${{ secrets.TARGET_DIR }}
-            curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-            sudo yum install -y nodejs
+            git pull origin frontend
             npm install
-            npm run build
-            pm2 delete all || true
-            pm2 start npm --name "next-app" -- run start
-            pm2 save
+            pm2 restart frontend
