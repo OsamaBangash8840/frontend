@@ -18,7 +18,7 @@ const ChatBot = () => {
   const AI_USER_ID = process.env.NEXT_PUBLIC_AI_USER_ID || '';
 
   useEffect(() => {
-    socket = io('http://65.1.112.2:7000', {
+    socket = io('http://13.203.158.246:7000', {
       withCredentials: true,
       transports: ['websocket', 'polling']
     });
@@ -63,7 +63,7 @@ const ChatBot = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://65.1.112.2:7000/api/v2/message/get-messages/${AI_USER_ID}`,
+        `http://13.203.158.246:7000/api/v2/message/get-messages/${AI_USER_ID}`,
         { withCredentials: true }
       );
       const messagesData = res.data.messages || res.data || [];
@@ -107,7 +107,7 @@ const ChatBot = () => {
 
     try {
       const response = await axios.post(
-        `http://65.1.112.2:7000/api/v2/message/send-message/${AI_USER_ID}`,
+        `http://13.203.158.246:7000/api/v2/message/send-message/${AI_USER_ID}`,
         { message: messageToSend },
         { withCredentials: true }
       );
@@ -159,7 +159,7 @@ const ChatBot = () => {
     }
     try {
       await apiClient.patch(
-        `http://65.1.112.2:7000/api/v2/message/clear-conversation/${conversationId}`,
+        `http://13.203.158.246:7000/api/v2/message/clear-conversation/${conversationId}`,
         {},
         { withCredentials: true }
       );
