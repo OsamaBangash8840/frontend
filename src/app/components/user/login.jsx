@@ -23,14 +23,27 @@ const Login = () => {
         email,
         password
       }, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
       const user = res.data?.data?.user;
 
       if (user) {
         localStorage.setItem("user", JSON.stringify(user));
-        router.push('/user/chats');
+        
+        // Set additional cookie manually if needed
+        if (res.headers['set-cookie']) {
+          console.log('Cookies received:', res.headers['set-cookie']);
+        }
+
+        // Ensure cookies are properly set before navigation
+        setTimeout(() => {
+          router.push('/user/chatbot');
+        }, 100);
       } else {
         setErrors({ general: "Login succeeded, but user data is missing." });
       }
