@@ -316,7 +316,7 @@ const ChatBot = () => {
             {messages.map((msg, idx) => {
               const senderId = getMessageSenderId(msg);
               const currentUserIdentifier = currentUser?.username || currentUser?._id;
-              const isMyMessage = String(senderId) === String(currentUserIdentifier);
+              const isMyMessage = !isAIMessage(msg); // User messages on right, AI on left
               const messageText = getMessageText(msg);
               const isAI = isAIMessage(msg);
 
