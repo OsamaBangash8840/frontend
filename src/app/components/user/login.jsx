@@ -31,24 +31,30 @@ const Login = () => {
       });
 
       const user = res.data?.data?.user;
+      const accessToken = res.headers?.token || res.data?.data?.accessToken;
 
-      if (user) {
+      if (user && accessToken) {
+        // Store user data and token in localStorage
         localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("accessToken", accessToken);
         
-        // Set additional cookie manually if needed
-        if (res.headers['set-cookie']) {
-          console.log('Cookies received:', res.headers['set-cookie']);
-        }
+        // Set default authorization header for future requests
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        
+        // Also set it for axios if you're using it elsewhere
+        axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        
+        console.log('Login successful:', { user: user.fullName, token: accessToken });
 
-        // Ensure cookies are properly set before navigation
+        // Navigate to chatbot page
         setTimeout(() => {
           router.push('/user/chatbot');
         }, 100);
       } else {
-        setErrors({ general: "Login succeeded, but user data is missing." });
+        setErrors({ general: "Login succeeded, but user data or token is missing." });
       }
     } catch (err) {
-      console.error(err);
+      console.error('Login error:', err);
       setErrors({ 
         general: err.response?.data?.message || "Login failed. Please try again." 
       });

@@ -12,15 +12,32 @@ const ChatBot = () => {
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [conversationId, setConversationId] = useState(null); // ✅ added state
+  const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
 
   const AI_USER_ID = process.env.NEXT_PUBLIC_AI_USER_ID || '';
 
+  // Setup authentication headers
+  const setupAuthHeaders = () => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      const authHeader = `Bearer ${token}`;
+      // Set for both apiClient and axios
+      apiClient.defaults.headers.common['Authorization'] = authHeader;
+      axios.defaults.headers.common['Authorization'] = authHeader;
+      return authHeader;
+    }
+    return null;
+  };
+
   useEffect(() => {
+    // Setup authentication
+    const authHeader = setupAuthHeaders();
+    
     socket = io('http://13.203.158.246:7000', {
       withCredentials: true,
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      extraHeaders: authHeader ? { 'Authorization': authHeader } : {}
     });
 
     socket.on('connect', () => {
@@ -36,7 +53,7 @@ const ChatBot = () => {
       const user = JSON.parse(userData);
       setCurrentUser(user);
       socket.emit('addUser', user._id);
-      loadChatHistory(user._id);
+      loadChatHistory(user._id); 
     }
 
     socket.on('newMessage', (newMessage) => {
@@ -62,17 +79,30 @@ const ChatBot = () => {
   const loadChatHistory = async (userId) => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('accessToken');
       const res = await axios.get(
         `http://13.203.158.246:7000/api/v2/message/get-messages/${AI_USER_ID}`,
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : undefined
+          }
+        }
       );
       const messagesData = res.data.messages || res.data || [];
-      const convId = res.data.conversationId || (messagesData[0] && messagesData[0].conversationId); // ✅ capture conversationId
+      const convId = res.data.conversationId || (messagesData[0] && messagesData[0].conversationId);
 
       setMessages(messagesData);
-      setConversationId(convId || null); // ✅ store conversationId
+      setConversationId(convId || null);
     } catch (error) {
       console.error('Error loading chat history:', error);
+      // If unauthorized, redirect to login
+      if (error.response?.status === 401) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        window.location.href = '/user/login';
+        return;
+      }
       setMessages([]);
       setConversationId(null);
     } finally {
@@ -106,10 +136,17 @@ const ChatBot = () => {
     setMessages(prev => [...prev, optimisticMessage]);
 
     try {
+      const token = localStorage.getItem('accessToken');
       const response = await axios.post(
         `http://13.203.158.246:7000/api/v2/message/send-message/${AI_USER_ID}`,
         { message: messageToSend },
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : undefined,
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       const realMessage = response.data;
@@ -125,6 +162,15 @@ const ChatBot = () => {
     } catch (error) {
       console.error('Error sending message to AI:', error);
       setIsTyping(false);
+      
+      // If unauthorized, redirect to login
+      if (error.response?.status === 401) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        window.location.href = '/user/login';
+        return;
+      }
+      
       setMessages(prev => prev.filter(msg => msg._id !== optimisticMessage._id));
       setMessage(messageToSend);
     }
@@ -158,13 +204,25 @@ const ChatBot = () => {
       return;
     }
     try {
+      const token = localStorage.getItem('accessToken');
       await apiClient.patch(
         `http://13.203.158.246:7000/api/v2/message/clear-conversation/${conversationId}`,
         {},
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : undefined
+          }
+        }
       );
     } catch (error) {
       console.error('Error clearing conversation:', error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        window.location.href = '/user/login';
+        return;
+      }
     }
     setMessages([]);
     setConversationId(null);
@@ -174,12 +232,26 @@ const ChatBot = () => {
     setMessage(suggestion);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    delete apiClient.defaults.headers.common['Authorization'];
+    delete axios.defaults.headers.common['Authorization'];
+    window.location.href = '/user/login';
+  };
+
   if (!currentUser) {
     return (
       <div className="w-[800px] mx-auto mt-16 h-[600px] flex items-center justify-center bg-gray-100 rounded-lg">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
           <p className="text-gray-500 text-lg">Please log in to chat with the AI</p>
+          <button 
+            onClick={() => window.location.href = '/user/login'}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
@@ -198,12 +270,18 @@ const ChatBot = () => {
             {socket?.connected ? 'Online' : 'Connecting...'}
           </div>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex space-x-2">
           <button
             onClick={clearChat}
             className="px-3 py-1 bg-white/20 rounded-full text-xs hover:bg-white/30 transition-colors"
           >
             Clear Chat
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1 bg-white/20 rounded-full text-xs hover:bg-white/30 transition-colors"
+          >
+            Logout
           </button>
         </div>
       </div>
