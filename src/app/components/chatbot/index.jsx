@@ -271,12 +271,12 @@ const ChatBot = () => {
           </div>
         </div>
         <div className="ml-auto flex space-x-2">
-          <button
+          {/* <button
             onClick={clearChat}
             className="px-3 py-1 bg-white/20 rounded-full text-xs hover:bg-white/30 transition-colors"
           >
             Clear Chat
-          </button>
+          </button> */}
           <button
             onClick={handleLogout}
             className="px-3 py-1 bg-white/20 rounded-full text-xs hover:bg-white/30 transition-colors"
