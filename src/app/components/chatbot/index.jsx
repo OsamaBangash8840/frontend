@@ -34,7 +34,7 @@ const ChatBot = () => {
     // Setup authentication
     const authHeader = setupAuthHeaders();
     
-    socket = io('http://13.203.158.246:7000', {
+    socket = io('http://13.203.158.246.nip.io:7000', {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       extraHeaders: authHeader ? { 'Authorization': authHeader } : {}
@@ -81,7 +81,7 @@ const ChatBot = () => {
     try {
       const token = localStorage.getItem('accessToken');
       const res = await axios.get(
-        `http://13.203.158.246:7000/api/v2/message/get-messages/${AI_USER_ID}`,
+        `http://13.203.158.246.nip.io:7000/api/v2/message/get-messages/${AI_USER_ID}`,
         { 
           withCredentials: true,
           headers: {
@@ -138,7 +138,7 @@ const ChatBot = () => {
     try {
       const token = localStorage.getItem('accessToken');
       const response = await axios.post(
-        `http://13.203.158.246:7000/api/v2/message/send-message/${AI_USER_ID}`,
+        `http://13.203.158.246.nip.io:7000/api/v2/message/send-message/${AI_USER_ID}`,
         { message: messageToSend },
         { 
           withCredentials: true,
@@ -206,7 +206,7 @@ const ChatBot = () => {
     try {
       const token = localStorage.getItem('accessToken');
       await apiClient.patch(
-        `http://13.203.158.246:7000/api/v2/message/clear-conversation/${conversationId}`,
+        `http://13.203.158.246.nip.io:7000/api/v2/message/clear-conversation/${conversationId}`,
         {},
         { 
           withCredentials: true,
