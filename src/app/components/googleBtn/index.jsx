@@ -2,7 +2,7 @@ import React from 'react'
 
 const GoogleBtn = () => {
     const handleGoogleLogin = () => {
-        window.location.href = 'http://13.203.158.246:7000/api/v1/user/google'
+        window.location.href = 'http://13.203.158.246.nip.io:7000/api/v1/user/google'
     }
   return (
     <button 
